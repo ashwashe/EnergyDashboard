@@ -4,6 +4,23 @@
 <style>
     /* Add your CSS styles here */
 
+    .energy-info-wrapper {
+        display: flex;
+        justify-content: space-between; /* Adjusts the space between the two divs */
+        align-items: center; /* Aligns items vertically in the center */
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc; /* Light grey border */
+        background-color: #f9f9f9; /* Very light grey background */
+        border-radius: 5px; /* Rounded corners */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Subtle shadow for depth */
+    }
+
+    .energy-info {
+        margin: 0; /* Removes margin from .energy-info to better fit in the flex container */
+        padding: 0 10px; /* Adjust padding as needed */
+    }
+
     .sidebar {
         height: 100%;
         width: 250px;
@@ -17,28 +34,28 @@
         color: white;
     }
 
-    .sidebar h2, .sidebar h3 {
-        padding: 6px 16px;
-        text-align: center;
-        margin: 0;
-    }
+        .sidebar h2, .sidebar h3 {
+            padding: 6px 16px;
+            text-align: center;
+            margin: 0;
+        }
 
-    .sidebar ul {
-        list-style-type: none;
-        padding: 0;
-        margin: 0;
-    }
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
 
-    .sidebar ul li a {
-        padding: 10px 15px;
-        text-decoration: none;
-        color: white;
-        display: block;
-    }
+            .sidebar ul li a {
+                padding: 10px 15px;
+                text-decoration: none;
+                color: white;
+                display: block;
+            }
 
-    .sidebar ul li a:hover {
-        background-color: #575757;
-    }
+                .sidebar ul li a:hover {
+                    background-color: #575757;
+                }
 
     .content {
         margin-left: 250px;
@@ -54,26 +71,26 @@
         background-color: #f2f2f2;
     }
 
-    .form-container label {
-        font-weight: bold;
-    }
+        .form-container label {
+            font-weight: bold;
+        }
 
-    .form-container select {
-        width: 200px;
-        padding: 5px;
-        border: 1px solid #ccc;
-        border-radius: 3px;
-    }
+        .form-container select {
+            width: 200px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
 
-    .form-container button {
-        margin-top: 10px;
-        padding: 5px 10px;
-        border: none;
-        border-radius: 3px;
-        background-color: #4CAF50;
-        color: white;
-        cursor: pointer;
-    }
+        .form-container button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
 
     /* Additional CSS styles for controls */
     #userDropdown, #monthDropdown {
@@ -114,15 +131,15 @@
         margin-bottom: 20px;
     }
 
-    .form-container select {
-        width: 100%;
-        margin-bottom: 10px;
-    }
+        .form-container select {
+            width: 100%;
+            margin-bottom: 10px;
+        }
 
-    .form-container button {
-        width: 100%;
-        margin-bottom: 10px;
-    }
+        .form-container button {
+            width: 100%;
+            margin-bottom: 10px;
+        }
 
     #energyGraph {
         width: 100%;
@@ -186,18 +203,25 @@
         <h1>Welcome, @User.Identity.Name!</h1>
     </div>
 
+    <div class="energy-info-wrapper" style="display:none" id="totaldata">
+        <div class="energy-info"><h3>Total Consumption: <span id="totalConsumption"></span> kWh</h3></div>
+        <div class="energy-info"><h3>Total Generation: <span id="totalGeneration"></span> kWh</h3></div>
+    </div>
+
+
     <div class="form-container">
-
-     
-
+        <label>Select User</label>
         <select id="userSelect" onchange="fetchDataAndRenderGraph()">
-            <option value="">Please select</option>
+
+            <option value="">Please select one</option>
             @foreach (var user in Model.Users)
             {
                 <option value="@user.Id">@user.name</option>
             }
         </select>
+        <label>Select Time period</label>
         <select id="timePeriodSelect" onchange="fetchDataAndRenderGraph()">
+            <option value="">Select All</option>
             <option value="month">Current Month</option>
             <option value="week">Current Week</option>
             <option value="year">Current Year</option>
@@ -212,18 +236,28 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // document.getElementById('userSelect').addEventListener('change', function () 
-        // {
-            
-        //     var userId = this.value;
-        //     if (userId) {
-        //         fetchDataAndRenderGraph(userId);
-        //     }
-        // });
+
+        function fetchTotalEnergyData() {
+            const userId = document.getElementById('userSelect').value;
+
+            fetch(`/Dashboard/GetTotalEnergyData?userId=${userId}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('totalConsumption').textContent = data.totalConsumption.toFixed(2);
+                    document.getElementById('totalGeneration').textContent = data.totalGeneration.toFixed(2);
+                    document.getElementById('totaldata').style.display = 'block';
+                })
+                .catch(error => console.error('Error fetching total energy data:', error));
+        }
+
+
+
+
 
         let energyChart; // Move the chart variable outside the function to keep its reference
         function fetchDataAndRenderGraph() {
-        // function fetchDataAndRenderGraph(userId) {
+            // function fetchDataAndRenderGraph(userId) {
+
             const timePeriod = document.getElementById('timePeriodSelect').value;
             const userId = document.getElementById('userSelect').value;
             fetch(`/Dashboard/GetEnergyData?userId=${userId}&timePeriod=${timePeriod}`)
@@ -259,8 +293,10 @@
                     }
                 })
                 .catch(error => console.error('Error fetching data:', error));
+
+            fetchTotalEnergyData();
         }
 
-      
+
     </script>
 }

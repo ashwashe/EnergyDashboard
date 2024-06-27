@@ -28,9 +28,19 @@ namespace EnergyDashboardApp.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> GetTotalEnergyData(string userId)
+        {
+            var totalConsumption =  _energyDataService.CalculateTotalConsumptionAsync(userId);
+            var totalGeneration =  _energyDataService.CalculateTotalGenerationAsync(userId);
+
+            return Json(new { totalConsumption, totalGeneration });
+        }
+
+        [HttpGet]
         public async Task<IActionResult> GetEnergyData(string userId, string timePeriod)
         {
             DateTime startDate, endDate;
+            var labels = new List<string>();
 
             switch (timePeriod)
             {
@@ -48,19 +58,45 @@ namespace EnergyDashboardApp.Controllers
                     endDate = new DateTime(DateTime.Now.Year, 12, 31);
                     break;
                 default:
-                    return BadRequest("Invalid time period specified.");
+                    startDate = new DateTime(DateTime.Now.Year, 1, 1);
+                    endDate = new DateTime(DateTime.Now.Year, 12, 31);
+                    break;
             }
 
             var consumptionData = await _energyDataService.GetEnergyConsumptionByUserIdAsync(userId, startDate, endDate);
             var generationData = await _energyDataService.GetEnergyGenerationByUserIdAsync(userId, startDate, endDate);
 
             // Example transformation, adjust according to your actual data structure
-            var labels = consumptionData.Select(c => c.Date.ToString("yyyy-MM-dd")).ToList();
+
+            switch (timePeriod)
+            {
+                case "month":
+                    labels = consumptionData.Select(c => c.Date.ToString("MMM")).ToList();
+                    break;
+                case "week":
+                    labels = consumptionData.Select(c => GetWeekNumber(c.Date)).ToList();
+                    break;
+                case "year":
+                    labels = consumptionData.Select(c => c.Date.ToString("yyyy")).ToList();
+                    break;
+                default:
+                    labels = consumptionData.Select(c => c.Date.ToString("yyyy-MM-dd")).ToList();
+                    break;
+            }
+
+           
             var consumptionDataTransformed = consumptionData.Select(c => c.Consumption).ToList();
             var generationDataTransformed = generationData.Select(g => g.Generation).ToList();
 
             return Json(new { labels, consumptionData = consumptionDataTransformed, generationData = generationDataTransformed });
 
+        }
+
+        public string GetWeekNumber(DateTime date)
+        {
+            CultureInfo ciCurr = CultureInfo.CurrentCulture;
+            int weekNum = ciCurr.Calendar.GetWeekOfYear(date, CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+            return "Week " + weekNum;
         }
 
     }
