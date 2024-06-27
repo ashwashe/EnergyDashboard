@@ -14,15 +14,29 @@ namespace EnergyDashboardApp.Service
             _energyGenerations = database.GetCollection<EnergyGeneration>("EnergyGenerations");
         }
 
-        public async Task<List<EnergyConsumption>> GetEnergyConsumptionByUserIdAsync(string userId)
+        public async Task<List<EnergyConsumption>> GetEnergyConsumptionByUserIdAsync(string userId,DateTime startDate, DateTime endDate)
         {
-            return await _energyConsumptions.Find(x => x.UserId == userId).ToListAsync();
+            //return await _energyConsumptions.Find(x => x.UserId == userId).ToListAsync();
+
+            var filterBuilder = Builders<EnergyConsumption>.Filter;
+            var dateFilter = filterBuilder.Gte(x => x.Date, startDate) & filterBuilder.Lte(x => x.Date, endDate);
+            var userIdFilter = filterBuilder.Eq(x => x.UserId, userId);
+            var combinedFilter = filterBuilder.And(userIdFilter, dateFilter);
+
+            return await _energyConsumptions.Find(combinedFilter).ToListAsync();
         }
 
-        public async Task<List<EnergyGeneration>> GetEnergyGenerationByUserIdAsync(string userId)
+        public async Task<List<EnergyGeneration>> GetEnergyGenerationByUserIdAsync(string userId, DateTime startDate, DateTime endDate)
         {
             // Assuming EnergyGeneration also has a UserId to filter by
-            return await _energyGenerations.Find(x => x.UserId == userId).ToListAsync();
+            //return await _energyGenerations.Find(x => x.UserId == userId).ToListAsync();
+
+            var filterBuilder = Builders<EnergyGeneration>.Filter;
+            var dateFilter = filterBuilder.Gte(x => x.Date, startDate) & filterBuilder.Lte(x => x.Date, endDate);
+            var userIdFilter = filterBuilder.Eq(x => x.UserId, userId);
+            var combinedFilter = filterBuilder.And(userIdFilter, dateFilter);
+
+            return await _energyGenerations.Find(combinedFilter).ToListAsync();
         }
     }
 }

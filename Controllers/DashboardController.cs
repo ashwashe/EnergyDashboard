@@ -28,19 +28,31 @@ namespace EnergyDashboardApp.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetEnergyData(string userId)
+        public async Task<IActionResult> GetEnergyData(string userId, string timePeriod)
         {
-            //var consumptionData = await _energyDataService.GetEnergyConsumptionByUserIdAsync(userId);
-            //var generationData = await _energyDataService.GetEnergyGenerationByUserIdAsync(userId);
+            DateTime startDate, endDate;
 
-            //// Transform the data as needed for your frontend
-            //var consumptionDataTransformed = consumptionData.Select(c => new { c.Consumption }).ToList();
-            //var generationDataTransformed = generationData.Select(g => new { g.Generation }).ToList();
+            switch (timePeriod)
+            {
+                case "month":
+                    startDate = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                    endDate = startDate.AddMonths(1).AddDays(-1);
+                    break;
+                case "week":
+                    int diff = (7 + (DateTime.Now.DayOfWeek - DayOfWeek.Monday)) % 7;
+                    startDate = DateTime.Now.AddDays(-1 * diff).Date;
+                    endDate = startDate.AddDays(6);
+                    break;
+                case "year":
+                    startDate = new DateTime(DateTime.Now.Year, 1, 1);
+                    endDate = new DateTime(DateTime.Now.Year, 12, 31);
+                    break;
+                default:
+                    return BadRequest("Invalid time period specified.");
+            }
 
-            //return Json(new { consumptionData = consumptionDataTransformed, generationData = generationDataTransformed });
-
-            var consumptionData = await _energyDataService.GetEnergyConsumptionByUserIdAsync(userId);
-            var generationData = await _energyDataService.GetEnergyGenerationByUserIdAsync(userId);
+            var consumptionData = await _energyDataService.GetEnergyConsumptionByUserIdAsync(userId, startDate, endDate);
+            var generationData = await _energyDataService.GetEnergyGenerationByUserIdAsync(userId, startDate, endDate);
 
             // Example transformation, adjust according to your actual data structure
             var labels = consumptionData.Select(c => c.Date.ToString("yyyy-MM-dd")).ToList();
